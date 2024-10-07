@@ -3,25 +3,34 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: 255, 255, 255;
+  --foreground: 0, 0, 0;
+  --card-background: 249, 250, 251;
+  --card-foreground: 17, 24, 39;
+  --accent: 252, 186, 40;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: 15, 13, 14;
+  --foreground: 255, 255, 255;
+  --card-background: 31, 41, 55;
+  --card-foreground: 243, 244, 246;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.card {
+  background-color: rgb(var(--card-background));
+  color: rgb(var(--card-foreground));
+}
+
+.accent-bg {
+  background-color: rgb(var(--accent));
+}
+
+.accent-text {
+  color: rgb(var(--accent));
 }
