@@ -1,64 +1,37 @@
-"use client";
-
-import React from "react";
-import { Flame, Sparkles, TrendingUp } from "lucide-react";
-
-type FilterOption = "hot" | "new" | "top";
+import { useState } from "react";
+import { Flame, Clock, TrendingUp } from "lucide-react";
 
 interface FilterBarProps {
-  onFilterChange: (filter: FilterOption) => void;
-  activeFilter: FilterOption;
+  onFilterChange: (filter: "hot" | "new" | "top") => void;
+  activeFilter: "hot" | "new" | "top";
 }
 
 export default function FilterBar({
   onFilterChange,
   activeFilter,
 }: FilterBarProps) {
+  const filters = [
+    { name: "hot", icon: Flame },
+    { name: "new", icon: Clock },
+    { name: "top", icon: TrendingUp },
+  ] as const;
+
   return (
-    <div className="flex justify-center mb-8">
-      <div className="inline-flex bg-[#0F0D0E] dark:bg-[#231F20] rounded-full p-1 space-x-2">
-        <FilterButton
-          icon={<Flame size={18} />}
-          label="Hot"
-          active={activeFilter === "hot"}
-          onClick={() => onFilterChange("hot")}
-        />
-        <FilterButton
-          icon={<Sparkles size={18} />}
-          label="New"
-          active={activeFilter === "new"}
-          onClick={() => onFilterChange("new")}
-        />
-        <FilterButton
-          icon={<TrendingUp size={18} />}
-          label="Top"
-          active={activeFilter === "top"}
-          onClick={() => onFilterChange("top")}
-        />
-      </div>
+    <div className="flex justify-center space-x-4">
+      {filters.map(({ name, icon: Icon }) => (
+        <button
+          key={name}
+          onClick={() => onFilterChange(name)}
+          className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 flex items-center space-x-2 ${
+            activeFilter === name
+              ? "bg-[#FCBA28] text-[#0F0D0E]"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-[#231F20] dark:text-gray-200 dark:hover:bg-gray-600"
+          }`}
+        >
+          <Icon size={20} />
+          <span>{name.charAt(0).toUpperCase() + name.slice(1)}</span>
+        </button>
+      ))}
     </div>
-  );
-}
-
-interface FilterButtonProps {
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}
-
-function FilterButton({ icon, label, active, onClick }: FilterButtonProps) {
-  return (
-    <button
-      className={`flex items-center px-4 py-2 rounded-full transition-colors duration-200 ${
-        active
-          ? "bg-[#FCBA28] text-[#0F0D0E] dark:text-[#231F20]"
-          : "text-gray-300 hover:bg-[#231F20] dark:hover:bg-[#0F0D0E]"
-      }`}
-      onClick={onClick}
-    >
-      {icon}
-      <span className="ml-2 text-sm font-medium">{label}</span>
-    </button>
   );
 }

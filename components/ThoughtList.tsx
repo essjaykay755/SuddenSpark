@@ -1,14 +1,35 @@
 "use client";
 
-import { useState } from "react";
-import { Thought } from "@/lib/thoughts";
+import { useState, useEffect } from "react";
+import { voteThought } from "@/lib/thoughts";
+import { Thought } from "@/types/thought";
 import Modal from "./Modal";
-import { X, Twitter } from "lucide-react";
+import { X } from "lucide-react";
 import tinycolor from "tinycolor2";
 
-export default function ThoughtList({ thoughts }: { thoughts: Thought[] }) {
+export default function ThoughtList({
+  thoughts: initialThoughts,
+}: {
+  thoughts: Thought[];
+}) {
+  const [thoughts, setThoughts] = useState<Thought[]>(initialThoughts);
   const [selectedThought, setSelectedThought] = useState<Thought | null>(null);
   const [filteredUsername, setFilteredUsername] = useState<string | null>(null);
+  const [userVotes, setUserVotes] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") {
+      const savedVotes = localStorage.getItem("userVotes");
+      return savedVotes ? JSON.parse(savedVotes) : {};
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    setThoughts(initialThoughts);
+  }, [initialThoughts]);
+
+  useEffect(() => {
+    localStorage.setItem("userVotes", JSON.stringify(userVotes));
+  }, [userVotes]);
 
   const filteredThoughts = filteredUsername
     ? thoughts.filter((thought) => thought.username === filteredUsername)
@@ -23,6 +44,39 @@ export default function ThoughtList({ thoughts }: { thoughts: Thought[] }) {
     setFilteredUsername(null);
   };
 
+  const handleVote = async (
+    thoughtId: string,
+    voteType: keyof Thought["votes"]
+  ) => {
+    const prevVote = userVotes[thoughtId] as keyof Thought["votes"] | undefined;
+
+    if (prevVote === voteType) {
+      // User is un-voting
+      setUserVotes((prev) => {
+        const newUserVotes = { ...prev };
+        delete newUserVotes[thoughtId];
+        return newUserVotes;
+      });
+      await voteThought(thoughtId, null, prevVote);
+    } else {
+      // User is voting or changing vote
+      setUserVotes((prev) => ({ ...prev, [thoughtId]: voteType }));
+      await voteThought(thoughtId, voteType, prevVote || null);
+    }
+
+    // Update the thoughts state after the API call
+    const updatedThoughts = await fetch("/api/thoughts").then((res) =>
+      res.json()
+    );
+    setThoughts(updatedThoughts);
+
+    if (selectedThought && selectedThought.id === thoughtId) {
+      setSelectedThought(
+        updatedThoughts.find((t: Thought) => t.id === thoughtId) || null
+      );
+    }
+  };
+
   return (
     <>
       {filteredUsername && (
@@ -31,6 +85,7 @@ export default function ThoughtList({ thoughts }: { thoughts: Thought[] }) {
           <button
             onClick={resetFilter}
             className="p-1 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+            aria-label="Clear filter"
           >
             <X size={20} />
           </button>
@@ -43,6 +98,8 @@ export default function ThoughtList({ thoughts }: { thoughts: Thought[] }) {
             thought={thought}
             onClick={() => setSelectedThought(thought)}
             onUsernameClick={handleUsernameClick}
+            onVote={handleVote}
+            userVote={userVotes[thought.id]}
           />
         ))}
       </div>
@@ -52,6 +109,8 @@ export default function ThoughtList({ thoughts }: { thoughts: Thought[] }) {
             thought={selectedThought}
             fullContent
             onUsernameClick={handleUsernameClick}
+            onVote={handleVote}
+            userVote={userVotes[selectedThought.id]}
           />
         </Modal>
       )}
@@ -63,11 +122,15 @@ function ThoughtCard({
   thought,
   onClick,
   onUsernameClick,
+  onVote,
+  userVote,
   fullContent = false,
 }: {
   thought: Thought;
   onClick?: () => void;
   onUsernameClick: (username: string) => void;
+  onVote: (thoughtId: string, voteType: keyof Thought["votes"]) => void;
+  userVote?: string;
   fullContent?: boolean;
 }) {
   const bgColor = tinycolor(thought.bgColor);
@@ -117,7 +180,7 @@ function ThoughtCard({
         >
           {thought.twitter ? (
             <>
-              <Twitter size={16} className="mr-1" />@{thought.twitter}
+              <X size={16} className="mr-1" />@{thought.twitter}
             </>
           ) : (
             <>By {thought.username}</>
@@ -133,24 +196,32 @@ function ThoughtCard({
           count={thought.votes.like}
           bgColor={buttonBgColor}
           textColor={textColor}
+          onClick={() => onVote(thought.id, "like")}
+          active={userVote === "like"}
         />
         <VoteButton
           icon="❤️"
           count={thought.votes.heart}
           bgColor={buttonBgColor}
           textColor={textColor}
+          onClick={() => onVote(thought.id, "heart")}
+          active={userVote === "heart"}
         />
         <VoteButton
           icon="🤯"
           count={thought.votes.mind_blown}
           bgColor={buttonBgColor}
           textColor={textColor}
+          onClick={() => onVote(thought.id, "mind_blown")}
+          active={userVote === "mind_blown"}
         />
         <VoteButton
           icon="💩"
           count={thought.votes.poop}
           bgColor={buttonBgColor}
           textColor={textColor}
+          onClick={() => onVote(thought.id, "poop")}
+          active={userVote === "poop"}
         />
       </div>
     </div>
@@ -162,19 +233,29 @@ function VoteButton({
   count,
   bgColor,
   textColor,
+  onClick,
+  active,
 }: {
   icon: string;
   count: number;
   bgColor: string;
   textColor: string;
+  onClick: () => void;
+  active: boolean;
 }) {
   return (
     <button
-      className="flex items-center justify-between rounded-full px-2 py-1 text-sm hover:bg-opacity-50 transition-colors duration-200"
-      onClick={(e) => e.stopPropagation()}
+      className={`flex items-center justify-between rounded-full px-2 py-1 text-sm hover:bg-opacity-50 transition-colors duration-200 ${
+        active ? "ring-2 ring-offset-2 ring-[#FCBA28]" : ""
+      }`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       style={{ backgroundColor: bgColor, color: textColor }}
+      aria-label={`Vote ${icon}`}
     >
-      <span>{icon}</span>
+      <span aria-hidden="true">{icon}</span>
       <span className="ml-1">{count}</span>
     </button>
   );
