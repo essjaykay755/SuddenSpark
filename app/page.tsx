@@ -87,10 +87,11 @@ export default function Home() {
             What is a SuddenSpark?
           </h2>
           <p className="text-lg max-w-3xl mx-auto text-center">
-            A SuddenSpark is a miniature epiphany that makes the mundane more
-            interesting. It's an idea that offers people a new way of
-            considering the world around them. These thoughts are often
-            humorous, poignant, or thought-provoking.
+            <strong>SuddenSpark</strong> is the place where your random, quirky,
+            and fleeting thoughts find a home! Share those unexpected moments of
+            brilliance, weird ideas, and shower musings that might not make
+            total sense—but somehow feel right. Explore a world of spontaneous
+            thoughts from others and ignite your own spark of inspiration!
           </p>
         </div>
       </div>
