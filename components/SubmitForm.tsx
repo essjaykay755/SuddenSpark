@@ -69,7 +69,7 @@ export default function SubmitForm({ onClose, onSubmit }: SubmitFormProps) {
             htmlFor="twitter"
             className="block text-sm font-medium text-[#0F0D0E]"
           >
-            Twitter Handle (optional)
+            X (Twitter) Handle (optional)
           </label>
           <input
             type="text"
